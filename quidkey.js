@@ -1,5 +1,7 @@
 require('dotenv').config();
-const fetch = require('node-fetch');
+// Dynamic import to stay compatible with CommonJS
+const fetch = (...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 let tokenCache = { access_token: null, exp: 0 };
 
@@ -8,7 +10,7 @@ async function getBearer() {
   if (tokenCache.access_token && tokenCache.exp - 30 > now) {
     return tokenCache.access_token;
   }
-  const resp = await fetch(`${process.env.QK_API_BASE}/oauth2/token`, {
+  const resp = await fetch(`${process.env.QK_API_BASE}/api/v1/oauth2/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -16,7 +18,9 @@ async function getBearer() {
       client_secret: process.env.QK_CLIENT_SECRET,
     }),
   }).then(r => r.json());
-  tokenCache = { access_token: resp.access_token, exp: now + resp.expires_in };
+  tokenCache = { access_token: resp.data.access_token, exp: now + resp.data.expires_in };
+  console.log(`[Quidkey] Token: ${tokenCache.access_token}`);
+  console.log(`[Quidkey] Token cached for ${resp.data.expires_in} seconds`);
   return tokenCache.access_token;
 }
 
@@ -50,7 +54,9 @@ async function createEmbeddedPaymentRequest(order) {
     },
     body: JSON.stringify(body),
   }).then(r => r.json());
-  return resp.payment_token;
+  console.log(`[Quidkey] Payment response: ${JSON.stringify(resp)}`);
+  console.log(`[Quidkey] Payment request created: ${resp.data.payment_token}`);
+  return resp.data.payment_token;
 }
 
 module.exports = { createEmbeddedPaymentRequest };

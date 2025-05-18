@@ -49,11 +49,11 @@ app.post('/create-checkout-session', async (req, res) => {
     const order = {
       customerName: 'John Doe',
       email: email,
-      phone: '+49151123456',
-      country: 'DE',
+      phone: '+441234123456',
+      country: 'GB',
       orderId: `ORD-${Date.now()}`,
       amount: 9300,
-      currency: 'EUR',
+      currency: 'GBP',
       reference: 'Barcelona Tryp',
     };
 
