@@ -291,7 +291,7 @@
              case 'quidkey-change':
                  console.log('[Parent] QuidKey method selected. Updating state, hiding Stripe, enabling purchase.');
                  currentSelection = { source: 'quidkey', method: event.data.selectedMethod };
-                 purchaseButton.disabled = false; // Enable purchase for quidkey
+                 purchaseButton.disabled = !event.data.selectedMethod; // Only enable when a bank was chosen
                  // Collapse stripe so nothing selected
                  if (paymentElement) {
                      paymentElement.collapse();
