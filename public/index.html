@@ -136,7 +136,7 @@
 
               // add Quidkey iframe src
               if (payment_token) {
-                document.getElementById('quidkey-iframe').src = `http://localhost:3000/embedded?payment_token=${payment_token}`;
+                document.getElementById('quidkey-iframe').src = `http://localhost:3000/api/v1/embedded?payment_token=${payment_token}`;
               }
 
               // 4. Create Elements instance
