@@ -54,7 +54,6 @@
       display: none;
     }
 
-
   </style>
   <body>
     <div class="wrapper">
@@ -63,7 +62,7 @@
 
         <iframe
           id="quidkey-iframe"
-          src="http://localhost:5682/" /* Make sure this is the correct URL for your QuidKey iframe */
+          onload="this.classList.remove('iframe-hidden');"
           title="quidkey-payment-module"
           frameborder="0"
           allowfullscreen="true"
@@ -101,7 +100,7 @@
       // --- DOM Elements ---
       const purchaseButton = document.getElementById('purchase-button');
       const quidkeyIframe = document.getElementById('quidkey-iframe');
-      let quidkeyOrigin = new URL(quidkeyIframe.src).origin;
+      let quidkeyOrigin = null;
       const stripeContainer = document.getElementById('stripe-element-container');
       const paymentMessage = document.getElementById('payment-message');
 
@@ -285,7 +284,7 @@
             return;
         }
 
-        console.log(`[Parent] Received message from QuidKey ${event.origin}:`, event.data);
+        console.log(`[Parent] Received message from Quidkey ${event.origin}:`, event.data);
 
         // Handle messages based on type
         switch (event.data?.type) {
