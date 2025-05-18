@@ -101,7 +101,7 @@
       // --- DOM Elements ---
       const purchaseButton = document.getElementById('purchase-button');
       const quidkeyIframe = document.getElementById('quidkey-iframe');
-      const quidkeyOrigin = new URL(quidkeyIframe.src).origin;
+      let quidkeyOrigin = new URL(quidkeyIframe.src).origin;
       const stripeContainer = document.getElementById('stripe-element-container');
       const paymentMessage = document.getElementById('payment-message');
 
@@ -136,7 +136,10 @@
 
               // add Quidkey iframe src
               if (payment_token) {
-                document.getElementById('quidkey-iframe').src = `http://localhost:3000/api/v1/embedded?payment_token=${payment_token}`;
+                const iframe = document.getElementById('quidkey-iframe');
+                iframe.src = `http://localhost:3000/api/v1/embedded?payment_token=${payment_token}`;
+                // Update origin now that the src has changed
+                quidkeyOrigin = new URL(iframe.src).origin;
               }
 
               // 4. Create Elements instance
@@ -187,7 +190,7 @@
                   // Inform Quidkey iframe to unselect
                   if (quidkeyIframe && quidkeyIframe.contentWindow) {
                       console.log('[Parent] Sending { type: quidkey-unselect } to QuidKey iframe.');
-                      quidkeyIframe.contentWindow.postMessage({ type: 'quidkey-unselect' }, quidkeyOrigin);
+                      quidkeyIframe.contentWindow.postMessage({ type: 'quidkey-unselect' }, '*');
                   }
               } else {
                   // Update method if available
@@ -211,7 +214,7 @@
                 currentSelection = { source: 'stripe', method: null };
                 purchaseButton.disabled = true; // Wait until element complete
                 if (quidkeyIframe && quidkeyIframe.contentWindow) {
-                    quidkeyIframe.contentWindow.postMessage({ type: 'quidkey-unselect' }, quidkeyOrigin);
+                    quidkeyIframe.contentWindow.postMessage({ type: 'quidkey-unselect' }, '*');
                 }
                 console.log('[Parent] New selection state:', currentSelection);
             }
@@ -296,7 +299,11 @@
                  }
                  console.log('[Parent] New selection state:', currentSelection);
                  break;
-             // Removed Stripe message cases ('stripe-interaction-start', 'stripe-change', 'error' from stripe iframe)
+             case 'quidkey-iframe-resize':
+                 if (typeof event.data.height === 'number') {
+                     quidkeyIframe.style.height = `${event.data.height}px`;
+                 }
+                 break;
              default:
                   console.log('[Parent] Received unknown message type or format from Quidkey:', event.data);
         }
