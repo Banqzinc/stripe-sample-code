@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Testing</title>
+    <!-- 1. Add Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <style>
+    html {
+      height: 100%;
+    }
+
+    body {
+      height: 100%;
+      margin: 0;
+      font-size: 200%;
+    }
+
+
+    .wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .payment-container {
+      height: 80%;
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Style for the Stripe element container */
+    #stripe-element-container {
+        width: 100%;
+    }
+
+    /* Style for error messages */
+    #payment-message {
+      color: rgb(105, 115, 134);
+      font-size: 16px;
+      line-height: 20px;
+      padding-top: 12px;
+      text-align: center;
+    }
+    #payment-message.hidden {
+      display: none;
+    }
+
+
+  </style>
+  <body>
+    <div class="wrapper">
+      <div class="payment-container">
+        <h2 style="margin-bottom: 1rem; font-size: 1.2em; font-weight: 500; text-align: center;">Select Payment Method</h2>
+
+        <iframe
+          id="quidkey-iframe"
+          src="http://localhost:5682/" /* Make sure this is the correct URL for your QuidKey iframe */
+          title="quidkey-payment-module"
+          frameborder="0"
+          allowfullscreen="true"
+          style="
+            width: 100%;
+            /* height: 120px; */
+            overflow: hidden;
+          "
+        ></iframe>
+
+        <!-- 2. Add container for Stripe Payment Element -->
+        <div id="stripe-element-container">
+             <div id="payment-element">
+               <!-- Stripe Payment Element will be inserted here -->
+             </div>
+             <!-- Used to display form errors -->
+             <div id="payment-message" class="hidden"></div>
+        </div>
+
+
+        <!-- Add the Purchase button -->
+        <button id="purchase-button" style="margin-top: 20px; padding: 10px 20px; font-size: 1rem;">Purchase</button>
+      </div>
+    </div>
+
+    <script>
+      // --- Configuration ---
+      // Replace with your actual publishable key
+      const stripePublishableKey = 'pk_test_51N448BBY03jTxzpG6n5YQlcLJfeIijwZs00h8pCUtlejBXSnEf13j0cf5ISSf0b7pL7rRWzDVPFRrCczw8A7Vnki00Cefk3jwj';
+      // Replace with the endpoint on your server that creates a PaymentIntent
+      const createPaymentIntentUrl = 'http://localhost:4242/create-checkout-session';
+      // Replace with the URL you want Stripe to redirect to after payment
+      const returnUrl = window.location.href; // Or a specific thank you page
+
+      // --- DOM Elements ---
+      const purchaseButton = document.getElementById('purchase-button');
+      const quidkeyIframe = document.getElementById('quidkey-iframe');
+      const quidkeyOrigin = new URL(quidkeyIframe.src).origin;
+      const stripeContainer = document.getElementById('stripe-element-container');
+      const paymentMessage = document.getElementById('payment-message');
+
+
+      // --- Stripe Variables ---
+      let stripe;
+      let elements;
+      let paymentElement;
+
+      // --- State to track selection ---
+      // Initial state: Quidkey selected, purchase enabled
+      let currentSelection = { source: 'quidkey', method: 'santander' }; // Default to quidkey if needed
+      purchaseButton.disabled = false; // Start enabled if quidkey is default
+      console.log('[Parent] Initial selection state:', currentSelection);
+
+      // --- Helper Functions ---
+      async function initializeStripe() {
+          try {
+              stripe = Stripe(stripePublishableKey);
+
+              // 3. Fetch client secret from your backend
+              const { clientSecret, payment_token } = await fetch(createPaymentIntentUrl, {
+                  method: "POST", // Or GET, depending on your server implementation
+                  headers: { "Content-Type": "application/json" },
+                  // Add any necessary body for the request, e.g., items, amount
+                  body: JSON.stringify({ email: 'customer@example.com' }), // Send required email
+              }).then((r) => r.json());
+
+              if (!clientSecret) {
+                  throw new Error("Failed to retrieve client secret from server.");
+              }
+
+              // add Quidkey iframe src
+              if (payment_token) {
+                document.getElementById('quidkey-iframe').src = `http://localhost:3000/embedded?payment_token=${payment_token}`;
+              }
+
+              // 4. Create Elements instance
+              elements = stripe.elements({ appearance: { theme: 'stripe' }, clientSecret });
+
+              // 5. Create and mount Payment Element
+              const paymentElementOptions = {
+                  layout: {
+                      type: 'accordion',
+                      defaultCollapsed: true, // Start collapsed so no Stripe method pre-selected
+                      radios: true,
+                      spacedAccordionItems: false
+                  }
+              };
+              paymentElement = elements.create("payment", paymentElementOptions);
+              paymentElement.mount("#payment-element"); // Mount in the new div
+
+              // 6. Listen for changes and focus in the PaymentElement
+              paymentElement.on('change', handlePaymentElementChange);
+              paymentElement.on('focus', handlePaymentElementFocus);
+
+          } catch (error) {
+              console.error("[Parent] Error initializing Stripe:", error);
+              showMessage(`Stripe initialization failed: ${error.message}`);
+              // Optionally disable Stripe as an option
+              stripeContainer.innerHTML = '<p>Could not load payment options.</p>';
+          }
+      }
+
+      function showMessage(messageText) {
+        paymentMessage.classList.remove("hidden");
+        paymentMessage.textContent = messageText;
+        setTimeout(function () {
+          paymentMessage.classList.add("hidden");
+          paymentMessage.textContent = "";
+        }, 4000); // Hide after 4 seconds
+      }
+
+      // --- Event Handlers ---
+      function handlePaymentElementChange(event) {
+          console.log('[Parent] Stripe PaymentElement change event:', event);
+          const stripeMethodSelected = !event.collapsed; // expanded means user clicked a method
+          if (stripeMethodSelected) {
+              // Stripe method selected/expanded
+              if (currentSelection.source !== 'stripe') {
+                  // Switch from quidkey to stripe
+                  currentSelection = { source: 'stripe', method: event.value?.type || null };
+                  // Inform Quidkey iframe to unselect
+                  if (quidkeyIframe && quidkeyIframe.contentWindow) {
+                      console.log('[Parent] Sending { type: quidkey-unselect } to QuidKey iframe.');
+                      quidkeyIframe.contentWindow.postMessage({ type: 'quidkey-unselect' }, quidkeyOrigin);
+                  }
+              } else {
+                  // Update method if available
+                  if (event.value?.type) currentSelection.method = event.value.type;
+              }
+              purchaseButton.disabled = !event.complete; // enable only when complete
+          } else {
+              // Stripe collapsed/deselected
+              if (currentSelection.source === 'stripe') {
+                   currentSelection.method = null;
+                   purchaseButton.disabled = true;
+              }
+          }
+          console.log('[Parent] New selection state after stripe change:', currentSelection);
+      }
+
+       function handlePaymentElementFocus() {
+            console.log('[Parent] Stripe PaymentElement focused.');
+            if (currentSelection.source !== 'stripe') {
+                console.log('[Parent] Switching selection to Stripe on focus.');
+                currentSelection = { source: 'stripe', method: null };
+                purchaseButton.disabled = true; // Wait until element complete
+                if (quidkeyIframe && quidkeyIframe.contentWindow) {
+                    quidkeyIframe.contentWindow.postMessage({ type: 'quidkey-unselect' }, quidkeyOrigin);
+                }
+                console.log('[Parent] New selection state:', currentSelection);
+            }
+        }
+
+
+      purchaseButton.addEventListener('click', async () => {
+        console.log('[Parent] Purchase button clicked. Current selection:', currentSelection);
+        purchaseButton.disabled = true; // Disable button during processing
+
+        if (!currentSelection.source) {
+             console.warn('[Parent] Purchase clicked, but no payment method source is selected.');
+             showMessage('Please select a payment method first.');
+             // No need to re-enable here, selection should re-enable it.
+             return;
+        }
+
+        if (currentSelection.source === 'stripe') {
+            if (!stripe || !elements) {
+              console.error('[Parent] Stripe.js or Elements not initialized.');
+              showMessage('Payment system error. Please refresh.');
+              return; // Stripe not ready
+            }
+
+            console.log('[Parent] Confirming Stripe payment.');
+            // Use stripe.confirmPayment directly
+            const { error } = await stripe.confirmPayment({
+              elements,
+              confirmParams: {
+                // Make sure to change this to your payment completion page
+                return_url: returnUrl,
+              },
+            });
+
+             if (error) {
+                // This point will only be reached if there is an immediate error when
+                // confirming the payment. Otherwise, your customer will be redirected to
+                // your `return_url`. For some payment methods like iDEAL, your customer will
+                // be redirected to an intermediate site first to authorize the payment, then
+                // redirected to the `return_url`.
+                if (error.type === "card_error" || error.type === "validation_error") {
+                  showMessage(error.message);
+                } else {
+                  showMessage("An unexpected error occurred.");
+                }
+                purchaseButton.disabled = false; // Re-enable button on error
+            } else {
+                 // Redirect should happen automatically. Show a processing message.
+                 showMessage("Processing payment...");
+                 // Button remains disabled as redirect is expected.
+            }
+
+        } else if (currentSelection.source === 'quidkey') {
+            console.log(`[Parent] Proceeding with QuidKey payment method: ${currentSelection.method}`);
+            // Your existing QuidKey logic here...
+            alert(`Initiating QuidKey payment for: ${currentSelection.method}`);
+             // Re-enable button after quidkey action or confirmation
+            purchaseButton.disabled = false; // Example: re-enable immediately
+        }
+      });
+
+      // Combined message listener (only for Quidkey now)
+      window.addEventListener('message', (event) => {
+        // IMPORTANT: Check origin for security
+        if (event.origin !== quidkeyOrigin) {
+            // Ignore messages from other origins (like Stripe SDK messages if any)
+            // console.warn(`[Parent] Message ignored from unexpected origin: ${event.origin}`);
+            return;
+        }
+
+        console.log(`[Parent] Received message from QuidKey ${event.origin}:`, event.data);
+
+        // Handle messages based on type
+        switch (event.data?.type) {
+             case 'quidkey-change':
+                 console.log('[Parent] QuidKey method selected. Updating state, hiding Stripe, enabling purchase.');
+                 currentSelection = { source: 'quidkey', method: event.data.selectedMethod };
+                 purchaseButton.disabled = false; // Enable purchase for quidkey
+                 // Collapse stripe so nothing selected
+                 if (paymentElement) {
+                     paymentElement.collapse();
+                 }
+                 console.log('[Parent] New selection state:', currentSelection);
+                 break;
+             // Removed Stripe message cases ('stripe-interaction-start', 'stripe-change', 'error' from stripe iframe)
+             default:
+                  console.log('[Parent] Received unknown message type or format from Quidkey:', event.data);
+        }
+        // Note: purchaseButton.disabled is now handled within each case
+      });
+
+      // Initialize Stripe when the page loads
+      initializeStripe();
+
+    </script>
+  </body>
+</html>

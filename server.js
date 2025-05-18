@@ -3,6 +3,7 @@ require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
 const cors = require('cors');
+const { createEmbeddedPaymentRequest } = require('./quidkey');
 const app = express();
 
 // Use CORS middleware
@@ -44,6 +45,21 @@ app.post('/create-checkout-session', async (req, res) => {
       console.log(`[Server] Created new customer: ${customer.id}`);
     }
 
+    // Stub order data – in real app derive from basket
+    const order = {
+      customerName: 'John Doe',
+      email: email,
+      phone: '+49151123456',
+      country: 'DE',
+      orderId: `ORD-${Date.now()}`,
+      amount: 9300,
+      currency: 'EUR',
+      reference: 'Barcelona Tryp',
+    };
+
+    // Create Quidkey payment request
+    const payment_token = await createEmbeddedPaymentRequest(order);
+
     // Create a PaymentIntent with the order amount, currency, and customer
     console.log(`[Server] Creating PaymentIntent for customer: ${customer.id}`);
     const paymentIntent = await stripe.paymentIntents.create({
@@ -57,8 +73,8 @@ app.post('/create-checkout-session', async (req, res) => {
     });
 
     console.log(`[Server] PaymentIntent created successfully. Client Secret: ${paymentIntent.client_secret}`);
-    // Send PaymentIntent client secret to frontend
-    res.send({ clientSecret: paymentIntent.client_secret });
+    // Send PaymentIntent client secret and Quidkey token to frontend
+    res.send({ clientSecret: paymentIntent.client_secret, payment_token });
 
   } catch (error) {
     console.error('[Server] Error during checkout session creation:', error);
