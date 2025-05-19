@@ -1,0 +1,34 @@
+name: Trigger deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        type: choice
+        options:
+          - "stripe"
+      region:
+        type: choice
+        options:
+          - "europe-west1"
+      tag:
+        type: string
+        default: latest
+        
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('{0} | {1} | {2}', inputs.service_name, inputs.region, inputs.tag) || '' }}
+jobs:
+  deploy:
+    uses: Banqzinc/banqz-actions/.github/workflows/deploy-to-cloudrun.yml@main
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    with:
+      service_name: ${{ github.event.inputs.service_name }}
+      region: ${{ github.event.inputs.region }}
+      image: us-east1-docker.pkg.dev/bnqz-app-dev-a5b6/bnqz-app-tst-registry-use1-a5b6/stripe:${{ github.event.inputs.tag }}
+
+    secrets:
+      project_id: ${{ secrets.PROJECT_ID }}
+      service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
