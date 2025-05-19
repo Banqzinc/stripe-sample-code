@@ -12,7 +12,7 @@ app.use(cors()); // Allow all origins for development - be more specific in prod
 app.use(express.static('public'));
 app.use(express.json());
 
-const YOUR_DOMAIN = 'http://localhost:4242';
+const YOUR_DOMAIN = process.env.DOMAIN || 'http://localhost:4242';
 
 app.post('/create-checkout-session', async (req, res) => {
   console.log('[Server] Received request for /create-checkout-session');

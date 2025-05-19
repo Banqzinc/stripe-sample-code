@@ -93,7 +93,7 @@
       // Replace with your actual publishable key
       const stripePublishableKey = 'pk_test_51N448BBY03jTxzpG6n5YQlcLJfeIijwZs00h8pCUtlejBXSnEf13j0cf5ISSf0b7pL7rRWzDVPFRrCczw8A7Vnki00Cefk3jwj';
       // Replace with the endpoint on your server that creates a PaymentIntent
-      const createPaymentIntentUrl = 'http://localhost:4242/create-checkout-session';
+      const createPaymentIntentUrl = `${process.env.DOMAIN}/create-checkout-session`;
       // Replace with the URL you want Stripe to redirect to after payment
       const returnUrl = window.location.href; // Or a specific thank you page
 
@@ -138,7 +138,7 @@
               if (payment_token) {
                 quidkeyPaymentToken = payment_token; // <-- save token
                 const iframe = document.getElementById('quidkey-iframe');
-                iframe.src = `http://localhost:3000/api/v1/embedded?payment_token=${payment_token}`;
+                iframe.src = `${process.env.QK_API_BASE}/api/v1/embedded?payment_token=${payment_token}`;
                 // Update origin now that the src has changed
                 quidkeyOrigin = new URL(iframe.src).origin;
               }
