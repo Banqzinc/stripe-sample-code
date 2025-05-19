@@ -14,6 +14,24 @@ app.use(express.json());
 
 const YOUR_DOMAIN = process.env.DOMAIN || 'http://localhost:4242';
 
+// Add route to serve index.html with environment variables
+app.get('/', (req, res) => {
+  res.sendFile('index.html', { root: './public' }, (err) => {
+    if (err) {
+      console.error('Error sending index.html:', err);
+      res.status(500).send('Error loading page');
+    }
+  });
+});
+
+// Add route to get environment variables
+app.get('/config', (req, res) => {
+  res.json({
+    domain: process.env.DOMAIN,
+    qkApiBase: process.env.QK_API_BASE
+  });
+});
+
 app.post('/create-checkout-session', async (req, res) => {
   console.log('[Server] Received request for /create-checkout-session');
   const { email } = req.body;

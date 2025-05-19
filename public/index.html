@@ -90,12 +90,27 @@
 
     <script>
       // --- Configuration ---
-      // Replace with your actual publishable key
-      const stripePublishableKey = 'pk_test_51N448BBY03jTxzpG6n5YQlcLJfeIijwZs00h8pCUtlejBXSnEf13j0cf5ISSf0b7pL7rRWzDVPFRrCczw8A7Vnki00Cefk3jwj';
-      // Replace with the endpoint on your server that creates a PaymentIntent
-      const createPaymentIntentUrl = `${process.env.DOMAIN}/create-checkout-session`;
-      // Replace with the URL you want Stripe to redirect to after payment
-      const returnUrl = window.location.href; // Or a specific thank you page
+      let stripePublishableKey = 'pk_test_51N448BBY03jTxzpG6n5YQlcLJfeIijwZs00h8pCUtlejBXSnEf13j0cf5ISSf0b7pL7rRWzDVPFRrCczw8A7Vnki00Cefk3jwj';
+      let createPaymentIntentUrl;
+      let returnUrl = window.location.href; // Or a specific thank you page
+
+      // Fetch configuration from server
+      async function loadConfig() {
+        try {
+          const response = await fetch('/config');
+          const config = await response.json();
+          createPaymentIntentUrl = `${config.domain}/create-checkout-session`;
+          return config;
+        } catch (error) {
+          console.error('Error loading configuration:', error);
+          // Fallback to default values
+          createPaymentIntentUrl = 'http://localhost:4242/create-checkout-session';
+          return {
+            domain: 'http://localhost:4242',
+            qkApiBase: 'http://localhost:3000'
+          };
+        }
+      }
 
       // --- DOM Elements ---
       const purchaseButton = document.getElementById('purchase-button');
@@ -103,7 +118,6 @@
       let quidkeyOrigin = null;
       const stripeContainer = document.getElementById('stripe-element-container');
       const paymentMessage = document.getElementById('payment-message');
-
 
       // --- Stripe Variables ---
       let stripe;
@@ -120,14 +134,15 @@
       // --- Helper Functions ---
       async function initializeStripe() {
           try {
+              // Load configuration first
+              const config = await loadConfig();
               stripe = Stripe(stripePublishableKey);
 
               // 3. Fetch client secret from your backend
               const { clientSecret, payment_token } = await fetch(createPaymentIntentUrl, {
-                  method: "POST", // Or GET, depending on your server implementation
+                  method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  // Add any necessary body for the request, e.g., items, amount
-                  body: JSON.stringify({ email: 'customer@example.com' }), // Send required email
+                  body: JSON.stringify({ email: 'customer@example.com' }),
               }).then((r) => r.json());
 
               if (!clientSecret) {
@@ -136,9 +151,9 @@
 
               // add Quidkey iframe src
               if (payment_token) {
-                quidkeyPaymentToken = payment_token; // <-- save token
+                quidkeyPaymentToken = payment_token;
                 const iframe = document.getElementById('quidkey-iframe');
-                iframe.src = `${process.env.QK_API_BASE}/api/v1/embedded?payment_token=${payment_token}`;
+                iframe.src = `${config.qkApiBase}/api/v1/embedded?payment_token=${payment_token}`;
                 // Update origin now that the src has changed
                 quidkeyOrigin = new URL(iframe.src).origin;
               }
