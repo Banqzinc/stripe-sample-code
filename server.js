@@ -3,7 +3,7 @@ require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
 const cors = require('cors');
-const { createEmbeddedPaymentRequest } = require('./quidkey');
+const { createEmbeddedPaymentRequest, initiateEmbeddedPayment } = require('./quidkey');
 const app = express();
 
 // Use CORS middleware
@@ -49,7 +49,7 @@ app.post('/create-checkout-session', async (req, res) => {
     const order = {
       customerName: 'John Doe',
       email: email,
-      phone: '+441234123456',
+      phone: '+441234123457',
       country: 'GB',
       orderId: `ORD-${Date.now()}`,
       amount: 9300,
@@ -92,6 +92,22 @@ app.get('/session-status', async (req, res) => {
     status: paymentIntent.status,
     customer_email: paymentIntent.receipt_email // Or retrieve from customer object if needed
   });
+});
+
+// New route: initiate Quidkey payment (avoids browser CORS)
+app.post('/quidkey/payment-initiation', async (req, res) => {
+  try {
+    const { bankId, payment_token } = req.body;
+    if (!bankId || !payment_token) {
+      return res.status(400).send({ error: { message: 'bankId and payment_token are required' } });
+    }
+
+    const payment_link = await initiateEmbeddedPayment({ bankId, paymentToken: payment_token });
+    res.send({ success: true, payment_link });
+  } catch (err) {
+    console.error('[Server] Error during Quidkey payment initiation:', err);
+    res.status(500).send({ success: false, error: { message: err.message || 'Internal error' } });
+  }
 });
 
 app.listen(4242, () => console.log('Running on port 4242'));

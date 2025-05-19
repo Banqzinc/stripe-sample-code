@@ -109,11 +109,12 @@
       let stripe;
       let elements;
       let paymentElement;
+      let quidkeyPaymentToken = null; // <--- store payment_token for later use
 
       // --- State to track selection ---
       // Initial state: Quidkey selected, purchase enabled
-      let currentSelection = { source: 'quidkey', method: 'santander' }; // Default to quidkey if needed
-      purchaseButton.disabled = false; // Start enabled if quidkey is default
+      let currentSelection = { source: 'quidkey', method: null };
+      purchaseButton.disabled = true; // Disabled until iframe tells us the bank
       console.log('[Parent] Initial selection state:', currentSelection);
 
       // --- Helper Functions ---
@@ -135,6 +136,7 @@
 
               // add Quidkey iframe src
               if (payment_token) {
+                quidkeyPaymentToken = payment_token; // <-- save token
                 const iframe = document.getElementById('quidkey-iframe');
                 iframe.src = `http://localhost:3000/api/v1/embedded?payment_token=${payment_token}`;
                 // Update origin now that the src has changed
@@ -268,10 +270,37 @@
 
         } else if (currentSelection.source === 'quidkey') {
             console.log(`[Parent] Proceeding with QuidKey payment method: ${currentSelection.method}`);
-            // Your existing QuidKey logic here...
-            alert(`Initiating QuidKey payment for: ${currentSelection.method}`);
-             // Re-enable button after quidkey action or confirmation
-            purchaseButton.disabled = false; // Example: re-enable immediately
+            if (!currentSelection.method) {
+              showMessage('Please select your bank first.');
+              purchaseButton.disabled = false;
+              return;
+            }
+
+            if (!quidkeyPaymentToken) {
+              showMessage('Payment system error. Missing token.');
+              purchaseButton.disabled = false;
+              return;
+            }
+
+            try {
+              const resp = await fetch('/quidkey/payment-initiation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bankId: currentSelection.method, payment_token: quidkeyPaymentToken }),
+              }).then(r => r.json());
+
+              if (resp.success && resp.payment_link) {
+                window.location.href = resp.payment_link; // 🔀 redirect to bank
+              } else {
+                console.error('[Parent] Quidkey initiation failed:', resp);
+                showMessage(resp.error?.message || 'Unable to initiate payment.');
+                purchaseButton.disabled = false;
+              }
+            } catch (err) {
+              console.error('[Parent] Network / server error during Quidkey initiation:', err);
+              showMessage('Network error while initiating payment.');
+              purchaseButton.disabled = false;
+            }
         }
       });
 

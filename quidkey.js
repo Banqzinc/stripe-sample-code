@@ -42,8 +42,8 @@ async function createEmbeddedPaymentRequest(order) {
       test_transaction: true,
     },
     redirect_urls: {
-      success_url: `${process.env.YOUR_DOMAIN || 'http://localhost:4242'}/success`,
-      failure_url: `${process.env.YOUR_DOMAIN || 'http://localhost:4242'}/failure`,
+      success_url: `https://google.com/success`,
+      failure_url: `https://google.com//failure`,
     },
   };
   const resp = await fetch(`${process.env.QK_API_BASE}/api/v1/embedded/payment-requests`, {
@@ -59,4 +59,28 @@ async function createEmbeddedPaymentRequest(order) {
   return resp.data.payment_token;
 }
 
-module.exports = { createEmbeddedPaymentRequest };
+async function initiateEmbeddedPayment({ bankId, paymentToken }) {
+  if (!bankId) {
+    throw new Error('bankId is required');
+  }
+  if (!paymentToken) {
+    throw new Error('paymentToken is required');
+  }
+
+  const url = `${process.env.QK_API_BASE}/api/v1/embedded/payment-initiation?payment_token=${encodeURIComponent(
+    paymentToken
+  )}`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bankId }),
+  }).then(r => r.json());
+
+  if (!resp.success) {
+    throw new Error(resp.error?.message || 'Unknown Quidkey error');
+  }
+  return resp.data.payment_link;
+}
+
+module.exports = { createEmbeddedPaymentRequest, initiateEmbeddedPayment };
