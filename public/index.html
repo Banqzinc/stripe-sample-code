@@ -99,12 +99,12 @@
         try {
           const response = await fetch('/config');
           const config = await response.json();
-          createPaymentIntentUrl = `${config.domain}/create-checkout-session`;
+          createPaymentIntentUrl = `/create-checkout-session`;
           return config;
         } catch (error) {
           console.error('Error loading configuration:', error);
           // Fallback to default values
-          createPaymentIntentUrl = 'http://localhost:4242/create-checkout-session';
+          createPaymentIntentUrl = '/create-checkout-session';
           return {
             domain: 'http://localhost:4242',
             qkApiBase: 'http://localhost:3000'
