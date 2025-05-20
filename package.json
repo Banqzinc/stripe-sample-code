@@ -4,15 +4,20 @@
   "description": "A sample Stripe implementation",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development nodemon"
   },
   "author": "stripe-samples",
   "license": "ISC",
   "dependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@mv-d/toolbelt": "^9.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
+    "env-var": "^7.5.0",
     "express": "^4.17.1",
-    "node-fetch": "^3.3.2",
-    "stripe": "^18.0.0"
+    "nodemon": "^3.1.10",
+    "stripe": "^18.0.0",
+    "undici": "^7.10.0"
   }
 }

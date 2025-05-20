@@ -1,0 +1,17 @@
+{
+    "watch": [
+        "/server.js",
+        "/quidkey.js",
+        "public",
+        "src"
+    ],
+    "ignore": [
+        "node_modules"
+    ],
+    "ext": "ts,mjs,js,json,graphql,html,css,js",
+    "exec": "npm run start",
+    "legacyWatch": true,
+    "env": {
+        "NODE_ENV": "development"
+    }
+}
