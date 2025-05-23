@@ -115,6 +115,7 @@ async function initiateEmbeddedPayment(bankId, paymentToken) {
 		);
 
 	const { body } = result.unwrap();
+	console.dir(body, { depth: null });
 
 	if (!body.success)
 		throw new Error(result.error?.message || "Unknown Quidkey error");
