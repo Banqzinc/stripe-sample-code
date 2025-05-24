@@ -46,12 +46,12 @@ module.exports = {
 		const order = {
 			customerName: "John Doe",
 			email: email,
-			phone: "+441234123457",
+			phone: "+447395263205",
 			country: "GB",
 			orderId: `ORD-${Date.now()}`,
-			amount: 9300,
+			amount: 100,
 			currency: "GBP",
-			reference: "Going to Barcelona",
+			reference: "Tryp to Barcelona",
 		};
 
 		// Create Quidkey payment request
