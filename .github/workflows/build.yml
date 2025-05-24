@@ -1,0 +1,37 @@
+name: Trigger build
+
+on:
+  push:
+    tags:
+      - "*"
+  
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+      service_name:
+        type: choice
+        options:
+          - "stripe"
+      registry:
+        type: choice
+        options:
+          - "us-east1-docker.pkg.dev/bnqz-app-dev-a5b6/bnqz-app-tst-registry-use1-a5b6"
+
+jobs:
+  build:
+    uses: Banqzinc/banqz-actions/.github/workflows/docker-build.yml@main
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      packages: read
+    with:
+      tag: ${{ github.event.inputs.tag }}
+      service_name: ${{ github.event.inputs.service_name && github.event.inputs.service_name || 'stripe' }}
+      registry: ${{ github.event.inputs.registry && github.event.inputs.registry || 'us-east1-docker.pkg.dev/bnqz-app-dev-a5b6/bnqz-app-tst-registry-use1-a5b6' }}
+
+    secrets:
+      project_id: ${{ secrets.PROJECT_ID }}
+      service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}      
+      secret_docker_args: ""

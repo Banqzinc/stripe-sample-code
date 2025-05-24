@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Application</title>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<style>
+  html {
+    height: 100%;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+  }
+
+  .wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .payment-container {
+    height: 80%;
+    width: clamp(300px, 600px, 90%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #stripe-element-container {
+    width: 100%;
+  }
+
+  /* error messages */
+  #payment-message {
+    color: rgb(105, 115, 134);
+    font-size: 16px;
+    line-height: 20px;
+    padding-top: 12px;
+    text-align: center;
+    font-family: sans-serif;
+  }
+
+  #payment-message.hidden {
+    display: none;
+  }
+
+  .header {
+    margin-bottom: 1rem;
+    font-size: 1.2em;
+    font-weight: 500;
+    text-align: center;
+    font-family: sans-serif;
+  }
+
+  /* Quidkey styles */
+
+  :root {
+    /* 2x 54px row + 2x 1px border */
+    --quidkey-default-height: 110px;
+    --quidkey-bank-set-open-height: 400px;
+  }
+
+  .quidkey-element-container {
+    position: relative;
+    overflow: hidden;
+    margin-block-end: -2px;
+    width: 100%;
+    height: var(--quidkey-default-height);
+    min-height: var(--quidkey-default-height);
+  }
+
+  .quidkey-element-container iframe {
+    border: none;
+    height: inherit;
+    left: 0;
+    overflow-clip-margin: 0;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  .quidkey-bank-set-open {
+    height: var(--quidkey-bank-set-open-height);
+    min-height: var(--quidkey-bank-set-open-height);
+  }
+</style>
+
+<body>
+  <div class="wrapper">
+    <div class="payment-container">
+      <h2 class="header">Select Payment Method
+      </h2>
+      <!-- Quidkey Payment Element -->
+      <div class="quidkey-element-container">
+        <iframe id="quidkey-iframe" onload="this.classList.remove('iframe-hidden');" title="quidkey-payment-module"
+          allowfullscreen="true"></iframe>
+      </div>
+      <!-- end of Quidkey Payment Element -->
+      <div id="stripe-element-container">
+        <div id="payment-element">
+        </div>
+        <div id="payment-message" class="hidden"></div>
+      </div>
+
+      <button id="purchase-button" style="margin-top: 20px; padding: 10px 20px; font-size: 1rem;">Purchase</button>
+    </div>
+  </div>
+
+  <script id="clean" src="code.js"></script>
+</body>
+
+</html>
