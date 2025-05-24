@@ -1,6 +1,6 @@
 {
   "name": "stripe-sample",
-  "version": "0.0.01",
+  "version": "0.15",
   "description": "A sample Stripe implementation",
   "main": "server.js",
   "scripts": {
