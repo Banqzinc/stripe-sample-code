@@ -26,7 +26,9 @@ async function loadConfig() {
 
 const purchaseButton = document.getElementById("purchase-button");
 const quidkeyIframe = document.getElementById("quidkey-iframe");
-const qkFrameContainer = document.getElementById("qk-frame-container");
+const qkFrameContainer = document.getElementsByClassName(
+	"quidkey-element-container",
+)[0];
 const stripeContainer = document.getElementById("stripe-element-container");
 const paymentMessage = document.getElementById("payment-message");
 
@@ -131,7 +133,7 @@ function handlePaymentElementFocus() {
 	if (currentSelection.source !== "stripe") {
 		console.log("[Merchant] Switching selection to Stripe on focus.");
 
-		qkFrameContainer.classList.remove("quidkey-bank-list-open");
+		qkFrameContainer?.classList.remove("quidkey-bank-set-open");
 		currentSelection = { source: "stripe", method: null };
 		purchaseButton.disabled = true;
 

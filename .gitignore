@@ -1,2 +1,15 @@
-node_modules/
-.env
+**/.env
+**/node_modules
+**/coverage
+**/dist
+**/build
+**/.DS_Store
+**/_stories
+**/settings.*
+**/error.log
+**/storybook-static
+**/_backup
+**/node-compile-cache
+**/package-lock.json
+**/nohup.out
+*storybook.log
