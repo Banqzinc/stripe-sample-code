@@ -61,7 +61,7 @@ module.exports = {
 		try {
 			const paymentIntent = await Stripe.paymentIntents.create({
 				amount: 100,
-				currency: "GBP",
+				currency: "EUR",
 				customer: customer.id,
 				automatic_payment_methods: {
 					enabled: true,
