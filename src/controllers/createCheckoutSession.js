@@ -46,11 +46,11 @@ module.exports = {
 		const order = {
 			customerName: "John Doe",
 			email: email,
-			phone: "+441234123457",
-			country: "GB",
+			phone: "+351960306447",
+			country: "PT",
 			orderId: `ORD-${Date.now()}`,
-			amount: 9300,
-			currency: "GBP",
+			amount: 100,
+			currency: "EUR",
 			reference: "Going to Barcelona",
 		};
 
