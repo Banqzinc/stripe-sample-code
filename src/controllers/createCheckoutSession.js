@@ -46,11 +46,11 @@ module.exports = {
 		const order = {
 			customerName: "John Doe",
 			email: email,
-			phone: "+351960306447",
-			country: "PT",
+			phone: "+447395263205",
+			country: "GB",
 			orderId: `ORD-${Date.now()}`,
 			amount: 100,
-			currency: "EUR",
+			currency: "GBP",
 			reference: "Going to Barcelona",
 		};
 
@@ -61,7 +61,7 @@ module.exports = {
 		try {
 			const paymentIntent = await Stripe.paymentIntents.create({
 				amount: 100,
-				currency: "eur",
+				currency: "GBP",
 				customer: customer.id,
 				automatic_payment_methods: {
 					enabled: true,
